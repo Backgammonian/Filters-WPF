@@ -59,8 +59,18 @@
         <Setter Property="Margin" Value="2"/>
     </Style>
 
+    <Style x:Key="applyFilterTabTextBox" TargetType="TextBox" BasedOn="{StaticResource baseTextBox}">
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="applyFilterTabTextBlock" TargetType="TextBlock" BasedOn="{StaticResource baseTextBlock}">
+        <Setter Property="Margin" Value="2, 10, 2, 2"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
     <Style x:Key="applyFilterButton" TargetType="Button" BasedOn="{StaticResource baseButton}">
         <Setter Property="Margin" Value="2, 10, 2, 2"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsImageSelected}" Value="True">
                 <Setter Property="IsEnabled" Value="True"/>

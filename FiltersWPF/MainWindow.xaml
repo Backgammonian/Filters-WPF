@@ -113,8 +113,7 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                         <TextBlock
-                            Style="{StaticResource baseTextBlock}"
-                            HorizontalAlignment="Center"
+                            Style="{StaticResource applyFilterTabTextBlock}"
                             Text="Dimension of the matrix"/>
                         <xctk:IntegerUpDown
                             Style="{StaticResource integerUpDownStyle}"
@@ -123,6 +122,18 @@
                             Minimum="1"/>
                         <dg2d:DataGrid2D
                             ItemsSource2D="{Binding Matrix}"/>
+                        <TextBlock
+                            Style="{StaticResource applyFilterTabTextBlock}"
+                            Text="Factor"/>
+                        <TextBox
+                            Style="{StaticResource applyFilterTabTextBox}"
+                            Text="{Binding Factor}"/>
+                        <TextBlock
+                            Style="{StaticResource applyFilterTabTextBlock}"
+                            Text="Bias"/>
+                        <TextBox
+                            Style="{StaticResource applyFilterTabTextBox}"
+                            Text="{Binding Bias}"/>
                         <Button
                             Style="{StaticResource applyFilterButton}"
                             Command="{Binding ApplyFilterCommand}">
