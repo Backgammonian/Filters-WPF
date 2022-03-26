@@ -10,7 +10,7 @@
         mc:Ignorable="d"
         Title="Filters" 
         Height="600" 
-        Width="800">
+        Width="850">
     <Window.DataContext>
         <local:MainWindowViewModel/>
     </Window.DataContext>
@@ -82,7 +82,64 @@
                     </Grid>
                 </TabItem.Content>
             </TabItem>
-            
+
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel
+                        Style="{StaticResource baseStackPanel}">
+                        <TextBlock
+                            Style="{StaticResource titleTextBlock}"
+                            Text="Original image's histograms"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <TabItem.Content>
+                    <Grid
+                        Visibility="{Binding IsImageSelected, Converter={StaticResource booleanToVisibilityConverter}}"
+                        Style="{StaticResource baseGrid}">
+                        <ScrollViewer
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                Style="{StaticResource baseStackPanel}">
+                                <TextBlock
+                                    Style="{StaticResource histogramTitle}"
+                                    Text="Brightness histogram"/>
+                                <Image
+                                    Style="{StaticResource imageHistogram}"
+                                    Source="{Binding OriginalImageBrightnessHistogram}"/>
+                            
+                                <TextBlock
+                                    Style="{StaticResource histogramTitle}"
+                                    Text="Red histogram"/>
+                                <Image
+                                    Style="{StaticResource imageHistogram}"
+                                    Source="{Binding OriginalImageRedHistogram}"/>
+
+                                <TextBlock
+                                    Style="{StaticResource histogramTitle}"
+                                    Text="Green histogram"/>
+                                <Image
+                                    Style="{StaticResource imageHistogram}"
+                                    Source="{Binding OriginalImageGreenHistogram}"/>
+
+                                <TextBlock
+                                    Style="{StaticResource histogramTitle}"
+                                    Text="Blue histogram"/>
+                                <Image
+                                    Style="{StaticResource imageHistogram}"
+                                    Source="{Binding OriginalImageBlueHistogram}"/>
+
+                                <TextBlock
+                                    Style="{StaticResource histogramTitle}"
+                                    Text="Transparency histogram"/>
+                                <Image
+                                    Style="{StaticResource imageHistogram}"
+                                    Source="{Binding OriginalImageTransparencyHistogram}"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </TabItem.Content>
+            </TabItem>
+
             <TabItem>
                 <TabItem.Header>
                     <StackPanel
@@ -202,6 +259,63 @@
                                     Source="{Binding ResultingImage}"/>
                             </Grid>
                         </Border>
+                    </Grid>
+                </TabItem.Content>
+            </TabItem>
+
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel
+                        Style="{StaticResource baseStackPanel}">
+                        <TextBlock
+                            Style="{StaticResource titleTextBlock}"
+                            Text="Resulting image's histograms"/>
+                    </StackPanel>
+                </TabItem.Header>
+                <TabItem.Content>
+                    <Grid
+                        Visibility="{Binding IsResultingImageReady, Converter={StaticResource booleanToVisibilityConverter}}"
+                        Style="{StaticResource baseGrid}">
+                        <ScrollViewer
+                            VerticalScrollBarVisibility="Auto">
+                            <StackPanel
+                                Style="{StaticResource baseStackPanel}">
+                                <TextBlock
+                                    Style="{StaticResource histogramTitle}"
+                                    Text="Brightness histogram"/>
+                                <Image
+                                    Style="{StaticResource imageHistogram}"
+                                    Source="{Binding ResultingImageBrightnessHistogram}"/>
+
+                                <TextBlock
+                                    Style="{StaticResource histogramTitle}"
+                                    Text="Red histogram"/>
+                                <Image
+                                    Style="{StaticResource imageHistogram}"
+                                    Source="{Binding ResultingImageRedHistogram}"/>
+
+                                <TextBlock
+                                    Style="{StaticResource histogramTitle}"
+                                    Text="Green histogram"/>
+                                <Image
+                                    Style="{StaticResource imageHistogram}"
+                                    Source="{Binding ResultingImageGreenHistogram}"/>
+
+                                <TextBlock
+                                    Style="{StaticResource histogramTitle}"
+                                    Text="Blue histogram"/>
+                                <Image
+                                    Style="{StaticResource imageHistogram}"
+                                    Source="{Binding ResultingImageBlueHistogram}"/>
+
+                                <TextBlock
+                                    Style="{StaticResource histogramTitle}"
+                                    Text="Transparency histogram"/>
+                                <Image
+                                    Style="{StaticResource imageHistogram}"
+                                    Source="{Binding ResultingImageTransparencyHistogram}"/>
+                            </StackPanel>
+                        </ScrollViewer>
                     </Grid>
                 </TabItem.Content>
             </TabItem>

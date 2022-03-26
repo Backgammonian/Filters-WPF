@@ -15,5 +15,10 @@
         IntenseEmboss,
         Soften,
         MotionBlur,
+        HorizontalEdges,
+        VerticalEdges,
+        Edges45Degrees,
+        EdgesAllDirections,
+        Sharpen,
     }
 }

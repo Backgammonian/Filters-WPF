@@ -6,6 +6,7 @@ using System.IO;
 using System.Diagnostics;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using System.Threading.Tasks;
 using Microsoft.Toolkit.Mvvm.ComponentModel;
 using Microsoft.Toolkit.Mvvm.Input;
 using Microsoft.Win32;
@@ -29,6 +30,17 @@ namespace FiltersWPF
         private double _factor;
         private double _bias;
         private int _selectedTab;
+        private readonly BitmapImage[] _originalImageHistograms;
+        private readonly BitmapImage[] _resultingImageHistograms;
+        private const int _histogramPadding = 5;
+        private const int _histogramBarScale = 3;
+        private const int _histogramHeight = 200;
+        private readonly Color _brightnessHistogramColor;
+        private readonly Color _redHistogramColor;
+        private readonly Color _greenHistogramColor;
+        private readonly Color _blueHistogramColor;
+        private readonly Color _transparencyHistogramColor;
+        private readonly Stopwatch _sw;
 
         public MainWindowViewModel()
         {
@@ -59,12 +71,28 @@ namespace FiltersWPF
                 PreparedFilters.Sharpen5x5,
                 PreparedFilters.Soften,
                 PreparedFilters.MotionBlur,
+                PreparedFilters.HorizontalEdges,
+                PreparedFilters.VerticalEdges,
+                PreparedFilters.Edges45Degrees,
+                PreparedFilters.EdgesAllDirections,
+                PreparedFilters.Sharpen,
             };
 
             IsImageSelected = false;
             IsResultingImageReady = false;
 
             SelectedTabIndex = 0;
+
+            _originalImageHistograms = new BitmapImage[5];
+            _resultingImageHistograms = new BitmapImage[5];
+
+            _brightnessHistogramColor = Color.FromArgb(20, 20, 20);
+            _redHistogramColor = Color.FromArgb(240, 10, 10);
+            _greenHistogramColor = Color.FromArgb(10, 240, 10);
+            _blueHistogramColor = Color.FromArgb(10, 10, 240);
+            _transparencyHistogramColor = Color.FromArgb(90, 90, 90);
+
+            _sw = new Stopwatch();
         }
 
         public ICommand SelectImageCommand { get; }
@@ -118,10 +146,70 @@ namespace FiltersWPF
             private set => SetProperty(ref _originalImage, value);
         }
 
+        public BitmapImage OriginalImageBrightnessHistogram
+        {
+            get => _originalImageHistograms[0];
+            private set => SetProperty(ref _originalImageHistograms[0], value);
+        }
+
+        public BitmapImage OriginalImageRedHistogram
+        {
+            get => _originalImageHistograms[1];
+            private set => SetProperty(ref _originalImageHistograms[1], value);
+        }
+
+        public BitmapImage OriginalImageGreenHistogram
+        {
+            get => _originalImageHistograms[2];
+            private set => SetProperty(ref _originalImageHistograms[2], value);
+        }
+
+        public BitmapImage OriginalImageBlueHistogram
+        {
+            get => _originalImageHistograms[3];
+            private set => SetProperty(ref _originalImageHistograms[3], value);
+        }
+
+        public BitmapImage OriginalImageTransparencyHistogram
+        {
+            get => _originalImageHistograms[4];
+            private set => SetProperty(ref _originalImageHistograms[4], value);
+        }
+
         public BitmapImage ResultingImage
         {
             get => _resultingImage;
             private set => SetProperty(ref _resultingImage, value);
+        }
+
+        public BitmapImage ResultingImageBrightnessHistogram
+        {
+            get => _resultingImageHistograms[0];
+            private set => SetProperty(ref _resultingImageHistograms[0], value);
+        }
+
+        public BitmapImage ResultingImageRedHistogram
+        {
+            get => _resultingImageHistograms[1];
+            private set => SetProperty(ref _resultingImageHistograms[1], value);
+        }
+
+        public BitmapImage ResultingImageGreenHistogram
+        {
+            get => _resultingImageHistograms[2];
+            private set => SetProperty(ref _resultingImageHistograms[2], value);
+        }
+
+        public BitmapImage ResultingImageBlueHistogram
+        {
+            get => _resultingImageHistograms[3];
+            private set => SetProperty(ref _resultingImageHistograms[3], value);
+        }
+
+        public BitmapImage ResultingImageTransparencyHistogram
+        {
+            get => _resultingImageHistograms[4];
+            private set => SetProperty(ref _resultingImageHistograms[4], value);
         }
 
         public double[,] Matrix
@@ -175,13 +263,7 @@ namespace FiltersWPF
         public int SelectedTabIndex
         {
             get => _selectedTab;
-            set
-            {
-                if (value >= 0 && value <= 2)
-                {
-                    SetProperty(ref _selectedTab, value);
-                }
-            }
+            set => SetProperty(ref _selectedTab, value);
         }
 
         public PreparedFilters SelectedPreparedFilter
@@ -367,7 +449,7 @@ namespace FiltersWPF
                         Matrix[2, 1] = 2;
                         Matrix[2, 2] = 8;
                         Matrix[2, 3] = 2;
-                        Matrix[2, 4] = 1;
+                        Matrix[2, 4] = -1;
 
                         Matrix[3, 0] = -1;
                         Matrix[3, 1] = 2;
@@ -424,7 +506,7 @@ namespace FiltersWPF
                         MatrixDimension = 3;
 
                         Factor = 1.0 + "";
-                        Bias = 0.0 + "";
+                        Bias = 128.0 + "";
 
                         Matrix[0, 0] = -1;
                         Matrix[0, 1] = -1;
@@ -443,7 +525,7 @@ namespace FiltersWPF
                         MatrixDimension = 5;
 
                         Factor = 1.0 + "";
-                        Bias = 0.0 + "";
+                        Bias = 128.0 + "";
 
                         Matrix[0, 0] = -1;
                         Matrix[0, 1] = -1;
@@ -479,7 +561,7 @@ namespace FiltersWPF
                     case PreparedFilters.Soften:
                         MatrixDimension = 3;
 
-                        Factor = 1.0 + "";
+                        Factor = (1.0 / 9.0) + "";
                         Bias = 0.0 + "";
 
                         Matrix[0, 0] = 1;
@@ -508,6 +590,81 @@ namespace FiltersWPF
                                 Matrix[i, j] = i == j ? 1 : 0;
                             }
                         }
+                        break;
+
+                    case PreparedFilters.HorizontalEdges:
+                        MatrixDimension = 5;
+
+                        Factor = 1.0 + "";
+                        Bias = 0.0 + "";
+
+                        Matrix[0, 2] = -1;
+                        Matrix[1, 2] = -1;
+                        Matrix[2, 2] = 2;
+                        break;
+
+                    case PreparedFilters.VerticalEdges:
+                        MatrixDimension = 5;
+
+                        Factor = 1.0 + "";
+                        Bias = 0.0 + "";
+
+                        Matrix[0, 2] = -1;
+                        Matrix[1, 2] = -1;
+                        Matrix[2, 2] = 4;
+                        Matrix[3, 2] = -1;
+                        Matrix[4, 2] = -1;
+                        break;
+
+                    case PreparedFilters.Edges45Degrees:
+                        MatrixDimension = 5;
+
+                        Factor = 1.0 + "";
+                        Bias = 0.0 + "";
+
+                        Matrix[0, 0] = -1;
+                        Matrix[1, 1] = -2;
+                        Matrix[2, 2] = 6;
+                        Matrix[3, 3] = -2;
+                        Matrix[4, 4] = -1;
+                        break;
+
+                    case PreparedFilters.EdgesAllDirections:
+                        MatrixDimension = 3;
+
+                        Factor = 1.0 + "";
+                        Bias = 0.0 + "";
+
+                        Matrix[0, 0] = -1;
+                        Matrix[0, 1] = -1;
+                        Matrix[0, 2] = -1;
+
+                        Matrix[1, 0] = -1;
+                        Matrix[1, 1] = 8;
+                        Matrix[1, 2] = -1;
+
+                        Matrix[2, 0] = -1;
+                        Matrix[2, 1] = -1;
+                        Matrix[2, 2] = -1;
+                        break;
+
+                    case PreparedFilters.Sharpen:
+                        MatrixDimension = 3;
+
+                        Factor = 1.0 + "";
+                        Bias = 0.0 + "";
+
+                        Matrix[0, 0] = -1;
+                        Matrix[0, 1] = -1;
+                        Matrix[0, 2] = -1;
+
+                        Matrix[1, 0] = -1;
+                        Matrix[1, 1] = 9;
+                        Matrix[1, 2] = -1;
+
+                        Matrix[2, 0] = -1;
+                        Matrix[2, 1] = -1;
+                        Matrix[2, 2] = -1;
                         break;
                 }
             }
@@ -552,8 +709,6 @@ namespace FiltersWPF
             IsImageSelected = true;
             OriginalImagePath = openFileDialog.FileName;
 
-            var image = new Bitmap(openFileDialog.FileName);
-
             if (_originalImageBitmap != null)
             {
                 _originalImageBitmap.Dispose();
@@ -564,20 +719,51 @@ namespace FiltersWPF
                 _resultingImageBitmap.Dispose();
             }
 
-            _originalImageBitmap = new DirectBitmap(image.Width, image.Height);
-            _originalImageBitmap.DrawImage(image);
+            using (var image = new Bitmap(openFileDialog.FileName))
+            {
+                _originalImageBitmap = new DirectBitmap(image.Width, image.Height);
+                _originalImageBitmap.DrawImage(image);
 
-            _resultingImageBitmap = new DirectBitmap(image.Width, image.Height);
-
-            image.Dispose();
+                _resultingImageBitmap = new DirectBitmap(image.Width, image.Height);
+            }
 
             OriginalImage = _originalImageBitmap.ToBitmapImage();
+
+            _sw.Restart();
+
+            CreateOriginalImageHistogram();
+
+            _sw.Stop();
+            Debug.WriteLine("(CreateOriginalImageHistogram) Loaded histograms in " + _sw.Elapsed);
+        }
+
+        private void CreateOriginalImageHistogram()
+        {
+            var histograms = _originalImageBitmap.GetHistograms(
+                _histogramPadding,
+                _histogramBarScale,
+                _histogramHeight,
+                (_brightnessHistogramColor,
+                    _redHistogramColor,
+                    _greenHistogramColor,
+                    _blueHistogramColor,
+                    _transparencyHistogramColor));
+
+            _originalImageHistograms[0] = histograms.Item1;
+            _originalImageHistograms[1] = histograms.Item2;
+            _originalImageHistograms[2] = histograms.Item3;
+            _originalImageHistograms[3] = histograms.Item4;
+            _originalImageHistograms[4] = histograms.Item5;
+
+            OnPropertyChanged(nameof(OriginalImageBrightnessHistogram));
+            OnPropertyChanged(nameof(OriginalImageRedHistogram));
+            OnPropertyChanged(nameof(OriginalImageGreenHistogram));
+            OnPropertyChanged(nameof(OriginalImageBlueHistogram));
+            OnPropertyChanged(nameof(OriginalImageTransparencyHistogram));
         }
 
         private void ApplyFilter()
         {
-            Debug.WriteLine("ApplyFilter");
-
             for (int i = 0; i < Matrix.GetLength(0); i++)
             {
                 for (int j = 0; j < Matrix.GetLength(1); j++)
@@ -601,9 +787,11 @@ namespace FiltersWPF
             var w = _originalImageBitmap.Width;
             var h = _originalImageBitmap.Height;
 
-            for (int x = 0; x < w; x++)
-            {
-                for (int y = 0; y < h; y++)
+            _sw.Restart();
+
+            Parallel.For(0, w - 1, x =>
+            { 
+                Parallel.For(0, h - 1, y =>
                 {
                     var red = 0.0;
                     var green = 0.0;
@@ -631,13 +819,48 @@ namespace FiltersWPF
                     var newColor = Color.FromArgb(255, newRed, newGreen, newBlue);
 
                     _resultingImageBitmap.DrawPoint(x, y, newColor);
-                }
-            }
+                });
+            });
+
+            _sw.Stop();
+            Debug.WriteLine("(ApplyFilter) Time taken: " + _sw.Elapsed);
 
             IsResultingImageReady = true;
             ResultingImage = _resultingImageBitmap.ToBitmapImage();
 
-            SelectedTabIndex = 2;
+            _sw.Restart();
+
+            CreateResultingImageHistogram();
+
+            _sw.Stop();
+            Debug.WriteLine("(CreateResultingImageHistogram) Loaded histograms in " + _sw.Elapsed);
+
+            SelectedTabIndex = 3;
+        }
+
+        private void CreateResultingImageHistogram()
+        {
+            var histograms = _resultingImageBitmap.GetHistograms(
+                _histogramPadding,
+                _histogramBarScale,
+                _histogramHeight,
+                (_brightnessHistogramColor,
+                    _redHistogramColor,
+                    _greenHistogramColor,
+                    _blueHistogramColor,
+                    _transparencyHistogramColor));
+
+            _resultingImageHistograms[0] = histograms.Item1;
+            _resultingImageHistograms[1] = histograms.Item2;
+            _resultingImageHistograms[2] = histograms.Item3;
+            _resultingImageHistograms[3] = histograms.Item4;
+            _resultingImageHistograms[4] = histograms.Item5;
+
+            OnPropertyChanged(nameof(ResultingImageBrightnessHistogram));
+            OnPropertyChanged(nameof(ResultingImageRedHistogram));
+            OnPropertyChanged(nameof(ResultingImageGreenHistogram));
+            OnPropertyChanged(nameof(ResultingImageBlueHistogram));
+            OnPropertyChanged(nameof(ResultingImageTransparencyHistogram));
         }
 
         private void SaveResultingImage()
@@ -662,6 +885,8 @@ namespace FiltersWPF
             }
 
             _resultingImageBitmap.Bitmap.Save(saveFileDialog.FileName);
+
+            MessageBox.Show("Image " + Path.GetFileName(saveFileDialog.FileName) + " is saved", "Image is saved", MessageBoxButton.OK, MessageBoxImage.Information);
         }
     }
 }

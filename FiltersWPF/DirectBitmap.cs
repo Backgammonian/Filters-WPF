@@ -53,6 +53,54 @@ namespace FiltersWPF
             }
         }
 
+        public void DrawLine(int x0, int y0, int x1, int y1, Color color)
+        {
+            var dx = Math.Abs(x1 - x0);
+            var dy = Math.Abs(y1 - y0);
+            var sx = (x0 < x1) ? 1 : -1;
+            var sy = (y0 < y1) ? 1 : -1;
+            var err = dx - dy;
+
+            while (true)
+            {
+                DrawPoint(x0, y0, color);
+
+                if ((x0 == x1) && (y0 == y1))
+                {
+                    break;
+                }
+
+                var e2 = 2 * err;
+                if (e2 > -dy)
+                {
+                    err -= dy;
+                    x0 += sx;
+                }
+
+                if (e2 < dx)
+                {
+                    err += dx;
+                    y0 += sy;
+                }
+            }
+        }
+
+        public void DrawRectangle(int x, int y, int w, int h, Color color)
+        {
+            DrawLine(x, y, x, y + h, color);
+            DrawLine(x, y + h, x + w, y + h, color);
+            DrawLine(x + w, y + h, x + w, y, color);
+            DrawLine(x + w, y, x, y, color);
+        }
+
+        public void FillRectangle(int x, int y, int w, int h, Color color)
+        {
+            for (var i = x; i <= x + w; i++)
+            {
+                DrawLine(i, y, i, y + h, color);
+            }
+        }
+
         public void Clear(Color color)
         {
             using (var gr = Graphics.FromImage(Bitmap))
