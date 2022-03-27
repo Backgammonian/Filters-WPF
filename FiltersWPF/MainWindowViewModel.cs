@@ -540,7 +540,7 @@ namespace FiltersWPF
                         MatrixDimension = 3;
 
                         Factor = 1.0 + "";
-                        Bias = 0.0 + "";
+                        Bias = 128.0 + "";
 
                         Matrix[0, 0] = 2;
                         Matrix[0, 1] = 0;
