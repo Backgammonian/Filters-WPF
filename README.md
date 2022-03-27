@@ -1,6 +1,10 @@
 # Filters-WPF
 Small WPF app to work with image filters.
 User can choose one of prepared filters or create new image filter.
+## Features
+* Ability to create any image filter from scratch
+* Demonstration of colors histograms of input and output images
+* Ability to save output image
 ## Demonstration:
 ![demo](demo.gif)
 ## Libraries
