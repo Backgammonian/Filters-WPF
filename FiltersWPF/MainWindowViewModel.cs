@@ -41,12 +41,18 @@ namespace FiltersWPF
         private readonly Color _blueHistogramColor;
         private readonly Color _transparencyHistogramColor;
         private readonly Stopwatch _sw;
+        private bool _isLoadingImage;
+        private bool _wasAnyImageSelected;
+        private bool _isApplyingFilterInProcess;
+        private bool _wasAnyImagePutToProcess;
+        private bool _isSavingInProcess;
 
         public MainWindowViewModel()
         {
             SelectImageCommand = new RelayCommand(SelectImage);
             ApplyFilterCommand = new RelayCommand(ApplyFilter);
             SaveResultingImageCommand = new RelayCommand(SaveResultingImage);
+            RandomFilterCommand = new RelayCommand(GenerateRandomFilter);
 
             OriginalImagePath = string.Empty;
 
@@ -79,7 +85,12 @@ namespace FiltersWPF
             };
 
             IsImageSelected = false;
+            WasAnyImageSelected = false;
+            IsLoadingImage = false;
             IsResultingImageReady = false;
+            IsApplyingFilterInProcess = false;
+            WasAnyImagePutToProcess = false;
+            IsSavingInProcess = false;
 
             SelectedTabIndex = 0;
 
@@ -98,9 +109,13 @@ namespace FiltersWPF
         public ICommand SelectImageCommand { get; }
         public ICommand ApplyFilterCommand { get; }
         public ICommand SaveResultingImageCommand { get; }
+        public ICommand RandomFilterCommand { get; }
         public ObservableCollection<PreparedFilters> PreparedFiltersList { get; }
         public bool IsOriginalImageNotFullSize => !IsOriginalImageFullSize;
         public bool IsResultingImageNotFullSize => !IsResultingImageFullSize;
+        public bool IsNotLoadingImage => !IsLoadingImage;
+        public bool IsApplyingFilterNotInProcess => !IsApplyingFilterInProcess;
+        public bool IsSavingNotInProcess => !IsSavingInProcess;
 
         public string OriginalImagePath
         {
@@ -128,16 +143,58 @@ namespace FiltersWPF
             }
         }
 
+        public bool IsLoadingImage
+        {
+            get => _isLoadingImage;
+            set
+            {
+                SetProperty(ref _isLoadingImage, value);
+                OnPropertyChanged(nameof(IsNotLoadingImage));
+            }
+        }
+
         public bool IsImageSelected
         {
             get => _isImageSelected;
             private set => SetProperty(ref _isImageSelected, value);
         }
 
+        public bool WasAnyImageSelected
+        {
+            get => _wasAnyImageSelected;
+            private set => SetProperty(ref _wasAnyImageSelected, value);
+        }
+
         public bool IsResultingImageReady
         {
             get => _isResultingImageReady;
             private set => SetProperty(ref _isResultingImageReady, value);
+        }
+
+        public bool WasAnyImagePutToProcess
+        {
+            get => _wasAnyImagePutToProcess;
+            private set => SetProperty(ref _wasAnyImagePutToProcess, value);
+        }
+
+        public bool IsApplyingFilterInProcess
+        {
+            get => _isApplyingFilterInProcess;
+            private set
+            {
+                SetProperty(ref _isApplyingFilterInProcess, value);
+                OnPropertyChanged(nameof(IsApplyingFilterNotInProcess));
+            }
+        }
+
+        public bool IsSavingInProcess
+        {
+            get => _isSavingInProcess;
+            private set
+            {
+                SetProperty(ref _isSavingInProcess, value);
+                OnPropertyChanged(nameof(IsSavingNotInProcess));
+            }
         }
 
         public BitmapImage OriginalImage
@@ -227,8 +284,6 @@ namespace FiltersWPF
                 {
                     SetProperty(ref _matrixDimension, value);
 
-                    Debug.WriteLine("MatrixDimension: " + MatrixDimension);
-
                     UpdateMatrix();
                 }
             }
@@ -272,8 +327,6 @@ namespace FiltersWPF
             set
             {
                 SetProperty(ref _selectedPreparedFilter, value);
-
-                Debug.WriteLine("SelectedPreparedFilter: " + SelectedPreparedFilter);
 
                 switch (SelectedPreparedFilter)
                 {
@@ -679,21 +732,12 @@ namespace FiltersWPF
             {
                 for (int j = 0; j < Matrix.GetLength(1); j++)
                 {
-                    if (oldMatrix != null &&
-                        i < oldMatrix.GetLength(0) &&
-                        j < oldMatrix.GetLength(1))
-                    {
-                        Matrix[i, j] = oldMatrix[i, j];
-                    }
-                    else
-                    {
-                        Matrix[i, j] = 0;
-                    }
+                    Matrix[i, j] = oldMatrix != null && i < oldMatrix.GetLength(0) && j < oldMatrix.GetLength(1) ? oldMatrix[i, j] : 0;
                 }
             }
         }
 
-        private void SelectImage()
+        private async void SelectImage()
         {
             var openFileDialog = new OpenFileDialog
             {
@@ -706,8 +750,12 @@ namespace FiltersWPF
                 return;
             }
 
-            IsImageSelected = true;
-            OriginalImagePath = openFileDialog.FileName;
+            if (!File.Exists(openFileDialog.FileName))
+            {
+                MessageBox.Show("Image doesn't exist!", "Select image error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                return;
+            }
 
             if (_originalImageBitmap != null)
             {
@@ -719,7 +767,21 @@ namespace FiltersWPF
                 _resultingImageBitmap.Dispose();
             }
 
-            using (var image = new Bitmap(openFileDialog.FileName))
+            IsLoadingImage = true;
+            IsImageSelected = false;
+            OriginalImagePath = "Loading...";
+
+            await Task.Run(() => LoadImage(openFileDialog.FileName));
+
+            WasAnyImageSelected = true;
+            IsLoadingImage = false;
+            IsImageSelected = true;
+            OriginalImagePath = openFileDialog.FileName;
+        }
+
+        private void LoadImage(string path)
+        {
+            using (var image = new Bitmap(path))
             {
                 _originalImageBitmap = new DirectBitmap(image.Width, image.Height);
                 _originalImageBitmap.DrawImage(image);
@@ -728,17 +790,15 @@ namespace FiltersWPF
             }
 
             OriginalImage = _originalImageBitmap.ToBitmapImage();
-
-            _sw.Restart();
+            OriginalImage.Freeze();
 
             CreateOriginalImageHistogram();
-
-            _sw.Stop();
-            Debug.WriteLine("(CreateOriginalImageHistogram) Loaded histograms in " + _sw.Elapsed);
         }
 
         private void CreateOriginalImageHistogram()
         {
+            _sw.Restart();
+
             var histograms = _originalImageBitmap.GetHistograms(
                 _histogramPadding,
                 _histogramBarScale,
@@ -749,11 +809,19 @@ namespace FiltersWPF
                     _blueHistogramColor,
                     _transparencyHistogramColor));
 
+            _sw.Stop();
+            Debug.WriteLine("(CreateOriginalImageHistogram) Created histograms in " + _sw.Elapsed);
+
             _originalImageHistograms[0] = histograms.Item1;
             _originalImageHistograms[1] = histograms.Item2;
             _originalImageHistograms[2] = histograms.Item3;
             _originalImageHistograms[3] = histograms.Item4;
             _originalImageHistograms[4] = histograms.Item5;
+
+            for (int i = 0; i < _originalImageHistograms.Length; i++)
+            {
+                _originalImageHistograms[i].Freeze();
+            }
 
             OnPropertyChanged(nameof(OriginalImageBrightnessHistogram));
             OnPropertyChanged(nameof(OriginalImageRedHistogram));
@@ -762,36 +830,36 @@ namespace FiltersWPF
             OnPropertyChanged(nameof(OriginalImageTransparencyHistogram));
         }
 
-        private void ApplyFilter()
+        private async void ApplyFilter()
         {
-            for (int i = 0; i < Matrix.GetLength(0); i++)
-            {
-                for (int j = 0; j < Matrix.GetLength(1); j++)
-                {
-                    Debug.Write(Matrix[i, j] + " ");
-                }
-
-                Debug.WriteLine("");
-            }
-
             if (!IsImageSelected)
             {
-                MessageBox.Show("Image is not selected!",
-                    "Error",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
+                MessageBox.Show("Image is not selected!", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
 
                 return;
             }
 
+            IsResultingImageReady = false;
+            IsApplyingFilterInProcess = true;
+
+            await Task.Run(() => ProcessFilter());
+
+            IsResultingImageReady = true;
+            IsApplyingFilterInProcess = false;
+            WasAnyImagePutToProcess = true;
+            SelectedTabIndex = 3;
+        }
+
+        private void ProcessFilter()
+        {
             var w = _originalImageBitmap.Width;
             var h = _originalImageBitmap.Height;
 
             _sw.Restart();
 
             Parallel.For(0, w - 1, x =>
-            { 
-                Parallel.For(0, h - 1, y =>
+            {
+                for (int y = 0; y < h; y++)
                 {
                     var red = 0.0;
                     var green = 0.0;
@@ -819,27 +887,21 @@ namespace FiltersWPF
                     var newColor = Color.FromArgb(255, newRed, newGreen, newBlue);
 
                     _resultingImageBitmap.DrawPoint(x, y, newColor);
-                });
+                }
             });
 
             _sw.Stop();
             Debug.WriteLine("(ApplyFilter) Time taken: " + _sw.Elapsed);
 
-            IsResultingImageReady = true;
             ResultingImage = _resultingImageBitmap.ToBitmapImage();
-
-            _sw.Restart();
+            ResultingImage.Freeze();
 
             CreateResultingImageHistogram();
-
-            _sw.Stop();
-            Debug.WriteLine("(CreateResultingImageHistogram) Loaded histograms in " + _sw.Elapsed);
-
-            SelectedTabIndex = 3;
         }
-
         private void CreateResultingImageHistogram()
         {
+            _sw.Restart();
+
             var histograms = _resultingImageBitmap.GetHistograms(
                 _histogramPadding,
                 _histogramBarScale,
@@ -850,11 +912,19 @@ namespace FiltersWPF
                     _blueHistogramColor,
                     _transparencyHistogramColor));
 
+            _sw.Stop();
+            Debug.WriteLine("(CreateResultingImageHistogram) Created histograms in " + _sw.Elapsed);
+
             _resultingImageHistograms[0] = histograms.Item1;
             _resultingImageHistograms[1] = histograms.Item2;
             _resultingImageHistograms[2] = histograms.Item3;
             _resultingImageHistograms[3] = histograms.Item4;
             _resultingImageHistograms[4] = histograms.Item5;
+
+            for (int i = 0; i < _resultingImageHistograms.Length; i++)
+            {
+                _resultingImageHistograms[i].Freeze();
+            }
 
             OnPropertyChanged(nameof(ResultingImageBrightnessHistogram));
             OnPropertyChanged(nameof(ResultingImageRedHistogram));
@@ -863,7 +933,7 @@ namespace FiltersWPF
             OnPropertyChanged(nameof(ResultingImageTransparencyHistogram));
         }
 
-        private void SaveResultingImage()
+        private async void SaveResultingImage()
         {
             var defaultFileName = "Resulting image";
             var defaultExtension = ".png";
@@ -884,9 +954,35 @@ namespace FiltersWPF
                 return;
             }
 
-            _resultingImageBitmap.Bitmap.Save(saveFileDialog.FileName);
+            IsSavingInProcess = true;
 
-            MessageBox.Show("Image " + Path.GetFileName(saveFileDialog.FileName) + " is saved", "Image is saved", MessageBoxButton.OK, MessageBoxImage.Information);
+            await Task.Run(() => SaveImageToPath(saveFileDialog.FileName));
+
+            IsSavingInProcess = false;
+        }
+
+        private void SaveImageToPath(string path)
+        {
+            _resultingImageBitmap.Bitmap.Save(path);
+            MessageBox.Show("Image " + Path.GetFileName(path) + " is saved", "Image is saved", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void GenerateRandomFilter()
+        {
+            var random = new Random();
+            var randomOddNumber = random.NextOdd(1, 32);
+
+            MatrixDimension = randomOddNumber;
+            for (int i = 0; i < MatrixDimension; i++)
+            {
+                for (int j = 0; j < MatrixDimension; j++)
+                {
+                    Matrix[i, j] = random.Next(-100, 101);
+                }
+            }
+
+            Factor = random.NextDouble() + "";
+            Bias = random.Next(0, 129) + "";
         }
     }
 }

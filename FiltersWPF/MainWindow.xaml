@@ -42,7 +42,7 @@
                             Style="{StaticResource baseStackPanel}"
                             Orientation="Horizontal">
                             <Button
-                                Style="{StaticResource baseButton}"
+                                Style="{StaticResource loadButton}"
                                 Command="{Binding SelectImageCommand}">
                                 <TextBlock
                                     Style="{StaticResource baseTextBlock}"
@@ -94,7 +94,6 @@
                 </TabItem.Header>
                 <TabItem.Content>
                     <Grid
-                        Visibility="{Binding IsImageSelected, Converter={StaticResource booleanToVisibilityConverter}}"
                         Style="{StaticResource baseGrid}">
                         <ScrollViewer
                             VerticalScrollBarVisibility="Auto">
@@ -103,6 +102,8 @@
                                 <TextBlock
                                     Style="{StaticResource histogramTitle}"
                                     Text="Brightness histogram"/>
+                                <TextBlock
+                                    Style="{StaticResource histogramLoadingStatus}"/>
                                 <Image
                                     Style="{StaticResource imageHistogram}"
                                     Source="{Binding OriginalImageBrightnessHistogram}"/>
@@ -110,6 +111,8 @@
                                 <TextBlock
                                     Style="{StaticResource histogramTitle}"
                                     Text="Red histogram"/>
+                                <TextBlock
+                                    Style="{StaticResource histogramLoadingStatus}"/>
                                 <Image
                                     Style="{StaticResource imageHistogram}"
                                     Source="{Binding OriginalImageRedHistogram}"/>
@@ -117,6 +120,8 @@
                                 <TextBlock
                                     Style="{StaticResource histogramTitle}"
                                     Text="Green histogram"/>
+                                <TextBlock
+                                    Style="{StaticResource histogramLoadingStatus}"/>
                                 <Image
                                     Style="{StaticResource imageHistogram}"
                                     Source="{Binding OriginalImageGreenHistogram}"/>
@@ -124,6 +129,8 @@
                                 <TextBlock
                                     Style="{StaticResource histogramTitle}"
                                     Text="Blue histogram"/>
+                                <TextBlock
+                                    Style="{StaticResource histogramLoadingStatus}"/>
                                 <Image
                                     Style="{StaticResource imageHistogram}"
                                     Source="{Binding OriginalImageBlueHistogram}"/>
@@ -131,6 +138,8 @@
                                 <TextBlock
                                     Style="{StaticResource histogramTitle}"
                                     Text="Transparency histogram"/>
+                                <TextBlock
+                                    Style="{StaticResource histogramLoadingStatus}"/>
                                 <Image
                                     Style="{StaticResource imageHistogram}"
                                     Source="{Binding OriginalImageTransparencyHistogram}"/>
@@ -150,55 +159,72 @@
                     </StackPanel>
                 </TabItem.Header>
                 <TabItem.Content>
-                    <StackPanel
-                        Style="{StaticResource baseStackPanel}"
-                        HorizontalAlignment="Center">
-                        <TextBlock
-                            Style="{StaticResource baseTextBlock}"
-                            HorizontalAlignment="Center"
-                            Text="Prepared filters"/>
-                        <ComboBox
-                            Style="{StaticResource comboBoxStyle}"
-                            ItemsSource="{Binding PreparedFiltersList}"
-                            SelectedItem="{Binding SelectedPreparedFilter}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate>
-                                    <TextBlock
-                                        Style="{StaticResource baseTextBlock}"
-                                        Text="{Binding}"/>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                        <TextBlock
-                            Style="{StaticResource applyFilterTabTextBlock}"
-                            Text="Dimension of the matrix"/>
-                        <xctk:IntegerUpDown
-                            Style="{StaticResource integerUpDownStyle}"
-                            Value="{Binding MatrixDimension}"
-                            Increment="2"
-                            Minimum="1"/>
-                        <dg2d:DataGrid2D
-                            ItemsSource2D="{Binding Matrix}"/>
-                        <TextBlock
-                            Style="{StaticResource applyFilterTabTextBlock}"
-                            Text="Factor"/>
-                        <TextBox
-                            Style="{StaticResource applyFilterTabTextBox}"
-                            Text="{Binding Factor}"/>
-                        <TextBlock
-                            Style="{StaticResource applyFilterTabTextBlock}"
-                            Text="Bias"/>
-                        <TextBox
-                            Style="{StaticResource applyFilterTabTextBox}"
-                            Text="{Binding Bias}"/>
-                        <Button
-                            Style="{StaticResource applyFilterButton}"
-                            Command="{Binding ApplyFilterCommand}">
+                    <ScrollViewer
+                        VerticalScrollBarVisibility="Auto"
+                        HorizontalScrollBarVisibility="Auto">
+                        <StackPanel
+                            Style="{StaticResource baseStackPanel}"
+                            HorizontalAlignment="Center">
+                            <Button
+                                Style="{StaticResource randomFilterButton}"
+                                IsEnabled="{Binding IsApplyingFilterNotInProcess}"
+                                Command="{Binding RandomFilterCommand}">
+                                <TextBlock
+                                    Style="{StaticResource baseTextBlock}"
+                                    Text="Generate random filter"/>
+                            </Button>
                             <TextBlock
                                 Style="{StaticResource baseTextBlock}"
-                                Text="Apply filter"/>
-                        </Button>
-                    </StackPanel>
+                                HorizontalAlignment="Center"
+                                Text="Prepared filters"/>
+                            <ComboBox
+                                Style="{StaticResource comboBoxStyle}"
+                                IsEnabled="{Binding IsApplyingFilterNotInProcess}"
+                                ItemsSource="{Binding PreparedFiltersList}"
+                                SelectedItem="{Binding SelectedPreparedFilter}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <TextBlock
+                                            Style="{StaticResource baseTextBlock}"
+                                            Text="{Binding}"/>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                            <TextBlock
+                                Style="{StaticResource applyFilterTabTextBlock}"
+                                Text="Dimension of the matrix"/>
+                            <xctk:IntegerUpDown
+                                Style="{StaticResource integerUpDownStyle}"
+                                IsEnabled="{Binding IsApplyingFilterNotInProcess}"
+                                Value="{Binding MatrixDimension}"
+                                Increment="2"
+                                Minimum="1"/>
+                            <dg2d:DataGrid2D
+                                ItemsSource2D="{Binding Matrix}"
+                                IsEnabled="{Binding IsApplyingFilterNotInProcess}"/>
+                            <TextBlock
+                                Style="{StaticResource applyFilterTabTextBlock}"
+                                Text="Factor"/>
+                            <TextBox
+                                Style="{StaticResource applyFilterTabTextBox}"
+                                IsEnabled="{Binding IsApplyingFilterNotInProcess}"
+                                Text="{Binding Factor}"/>
+                            <TextBlock
+                                Style="{StaticResource applyFilterTabTextBlock}"
+                                Text="Bias"/>
+                            <TextBox
+                                Style="{StaticResource applyFilterTabTextBox}"
+                                IsEnabled="{Binding IsApplyingFilterNotInProcess}"
+                                Text="{Binding Bias}"/>
+                            <Button
+                                Style="{StaticResource applyFilterButton}"
+                                Command="{Binding ApplyFilterCommand}">
+                                <TextBlock
+                                    Style="{StaticResource baseTextBlock}"
+                                    Text="Apply filter"/>
+                            </Button>
+                        </StackPanel>
+                    </ScrollViewer>
                 </TabItem.Content>
             </TabItem>
             
@@ -224,13 +250,14 @@
                             Style="{StaticResource baseStackPanel}"
                             Orientation="Horizontal">
                             <Button
-                                Style="{StaticResource baseButton}"
-                                IsEnabled="{Binding IsResultingImageReady}"
+                                Style="{StaticResource saveButton}"
                                 Command="{Binding SaveResultingImageCommand}">
                                 <TextBlock
                                     Style="{StaticResource baseTextBlock}"
                                     Text="Save image"/>
                             </Button>
+                            <TextBlock
+                                Style="{StaticResource saveStatus}"/>
                         </StackPanel>
                         <StackPanel
                             Grid.Row="1"
@@ -274,7 +301,6 @@
                 </TabItem.Header>
                 <TabItem.Content>
                     <Grid
-                        Visibility="{Binding IsResultingImageReady, Converter={StaticResource booleanToVisibilityConverter}}"
                         Style="{StaticResource baseGrid}">
                         <ScrollViewer
                             VerticalScrollBarVisibility="Auto">
@@ -283,36 +309,46 @@
                                 <TextBlock
                                     Style="{StaticResource histogramTitle}"
                                     Text="Brightness histogram"/>
+                                <TextBlock
+                                    Style="{StaticResource resultingHistogramLoadingStatus}"/>
                                 <Image
-                                    Style="{StaticResource imageHistogram}"
+                                    Style="{StaticResource resultingImageHistogram}"
                                     Source="{Binding ResultingImageBrightnessHistogram}"/>
 
                                 <TextBlock
                                     Style="{StaticResource histogramTitle}"
                                     Text="Red histogram"/>
+                                <TextBlock
+                                    Style="{StaticResource resultingHistogramLoadingStatus}"/>
                                 <Image
-                                    Style="{StaticResource imageHistogram}"
+                                    Style="{StaticResource resultingImageHistogram}"
                                     Source="{Binding ResultingImageRedHistogram}"/>
 
                                 <TextBlock
                                     Style="{StaticResource histogramTitle}"
                                     Text="Green histogram"/>
+                                <TextBlock
+                                    Style="{StaticResource resultingHistogramLoadingStatus}"/>
                                 <Image
-                                    Style="{StaticResource imageHistogram}"
+                                    Style="{StaticResource resultingImageHistogram}"
                                     Source="{Binding ResultingImageGreenHistogram}"/>
 
                                 <TextBlock
                                     Style="{StaticResource histogramTitle}"
                                     Text="Blue histogram"/>
+                                <TextBlock
+                                    Style="{StaticResource resultingHistogramLoadingStatus}"/>
                                 <Image
-                                    Style="{StaticResource imageHistogram}"
+                                    Style="{StaticResource resultingImageHistogram}"
                                     Source="{Binding ResultingImageBlueHistogram}"/>
 
                                 <TextBlock
                                     Style="{StaticResource histogramTitle}"
                                     Text="Transparency histogram"/>
+                                <TextBlock
+                                    Style="{StaticResource resultingHistogramLoadingStatus}"/>
                                 <Image
-                                    Style="{StaticResource imageHistogram}"
+                                    Style="{StaticResource resultingImageHistogram}"
                                     Source="{Binding ResultingImageTransparencyHistogram}"/>
                             </StackPanel>
                         </ScrollViewer>

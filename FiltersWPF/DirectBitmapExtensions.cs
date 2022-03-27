@@ -12,7 +12,7 @@ namespace FiltersWPF
         public static BitmapImage ToBitmapImage(this DirectBitmap directBitmap)
         {
             using MemoryStream memory = new MemoryStream();
-            directBitmap.Bitmap.Save(memory, ImageFormat.Bmp);
+            directBitmap.Bitmap.Save(memory, ImageFormat.Png);
             memory.Position = 0;
             var bitmapImage = new BitmapImage();
             bitmapImage.BeginInit();
@@ -45,21 +45,6 @@ namespace FiltersWPF
                     alphas[color.A] += 1;
                 });
             });
-
-            /*for (int i = 0; i < directBitmap.Width; i++)
-            {
-                for (int j = 0; j < directBitmap.Height; j++)
-                {
-                    var color = directBitmap.GetPixel(i, j);
-                    var brightness = color.GetColorBrightness();
-
-                    brightnesses[brightness] += 1;
-                    reds[color.R] += 1;
-                    greens[color.G] += 1;
-                    blues[color.B] += 1;
-                    alphas[color.A] += 1;
-                }
-            }*/
 
             return (brightnesses, reds, greens, blues, alphas);
             

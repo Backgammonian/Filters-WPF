@@ -12,6 +12,11 @@
         <Setter Property="TextWrapping" Value="Wrap"/>
     </Style>
 
+    <Style x:Key="saveStatus" TargetType="TextBlock" BasedOn="{StaticResource baseTextBlock}">
+        <Setter Property="Text" Value="Saving image..."/>
+        <Setter Property="Visibility" Value="{Binding IsSavingInProcess, Converter={StaticResource booleanToVisibilityConverter}}"/>
+    </Style>
+    
     <Style x:Key="titleTextBlock" TargetType="TextBlock" BasedOn="{StaticResource baseTextBlock}">
         <Setter Property="FontSize" Value="16"/>
     </Style>
@@ -44,9 +49,31 @@
         <Setter Property="BorderBrush" Value="Gray"/>
     </Style>
 
-    <Style x:Key="imageHistogram" TargetType="Image">
+    <Style x:Key="baseImage" TargetType="Image">
         <Setter Property="HorizontalAlignment" Value="Left"/>
         <Setter Property="Stretch" Value="Uniform"/>
+    </Style>
+
+    <Style x:Key="imageHistogram" TargetType="Image" BasedOn="{StaticResource baseImage}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsLoadingImage}" Value="True">
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsLoadingImage}" Value="False">
+                <Setter Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="resultingImageHistogram" TargetType="Image" BasedOn="{StaticResource baseImage}">
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsApplyingFilterInProcess}" Value="True">
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </DataTrigger>
+            <DataTrigger Binding="{Binding IsApplyingFilterInProcess}" Value="False">
+                <Setter Property="Visibility" Value="Visible"/>
+            </DataTrigger>
+        </Style.Triggers>
     </Style>
 
     <Style x:Key="comboBoxStyle" TargetType="ComboBox">
@@ -76,17 +103,243 @@
     <Style x:Key="histogramTitle" TargetType="TextBlock" BasedOn="{StaticResource baseTextBlock}">
         <Setter Property="Margin" Value="4, 12, 2, 4"/>
     </Style>
+    
+    <Style x:Key="histogramLoadingStatus" TargetType="TextBlock" BasedOn="{StaticResource baseTextBlock}">
+        <Setter Property="Margin" Value="4, 2, 2, 4"/>
+        <Setter Property="FontStyle" Value="Oblique"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Style.Triggers>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsLoadingImage}" Value="False" />
+                    <Condition Binding="{Binding WasAnyImageSelected}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Text" Value="Waiting for input image..."/>
+                <Setter Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
+            
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsLoadingImage}" Value="True" />
+                    <Condition Binding="{Binding WasAnyImageSelected}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Text" Value="Loading..."/>
+                <Setter Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsLoadingImage}" Value="False" />
+                    <Condition Binding="{Binding WasAnyImageSelected}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsLoadingImage}" Value="True" />
+                    <Condition Binding="{Binding WasAnyImageSelected}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Text" Value="Loading..."/>
+                <Setter Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="resultingHistogramLoadingStatus" TargetType="TextBlock" BasedOn="{StaticResource baseTextBlock}">
+        <Setter Property="Margin" Value="4, 2, 2, 4"/>
+        <Setter Property="FontStyle" Value="Oblique"/>
+        <Setter Property="FontSize" Value="12"/>
+        <Style.Triggers>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="False" />
+                    <Condition Binding="{Binding WasAnyImagePutToProcess}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Text" Value="Waiting for output image..."/>
+                <Setter Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="True" />
+                    <Condition Binding="{Binding WasAnyImagePutToProcess}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Text" Value="Loading..."/>
+                <Setter Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="False" />
+                    <Condition Binding="{Binding WasAnyImagePutToProcess}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Visibility" Value="Collapsed"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="True" />
+                    <Condition Binding="{Binding WasAnyImagePutToProcess}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="Text" Value="Loading..."/>
+                <Setter Property="Visibility" Value="Visible"/>
+            </MultiDataTrigger>
+        </Style.Triggers>
+    </Style>
 
     <Style x:Key="applyFilterButton" TargetType="Button" BasedOn="{StaticResource baseButton}">
         <Setter Property="Margin" Value="2, 10, 2, 2"/>
         <Setter Property="HorizontalAlignment" Value="Center"/>
         <Style.Triggers>
-            <DataTrigger Binding="{Binding IsImageSelected}" Value="True">
-                <Setter Property="IsEnabled" Value="True"/>
-            </DataTrigger>
-            <DataTrigger Binding="{Binding IsImageSelected}" Value="False">
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsImageSelected}" Value="False" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="False" />
+                </MultiDataTrigger.Conditions>
                 <Setter Property="IsEnabled" Value="False"/>
-            </DataTrigger>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsImageSelected}" Value="True" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsImageSelected}" Value="False" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsImageSelected}" Value="True" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="True"/>
+            </MultiDataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="randomFilterButton" TargetType="Button" BasedOn="{StaticResource baseButton}">
+        <Setter Property="Margin" Value="2, 10, 2, 20"/>
+        <Setter Property="HorizontalAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="saveButton" TargetType="Button" BasedOn="{StaticResource baseButton}">
+        <Style.Triggers>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsResultingImageReady}" Value="False" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="False" />
+                    <Condition Binding="{Binding IsSavingInProcess}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsResultingImageReady}" Value="False" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="True" />
+                    <Condition Binding="{Binding IsSavingInProcess}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsResultingImageReady}" Value="True" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="True" />
+                    <Condition Binding="{Binding IsSavingInProcess}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsResultingImageReady}" Value="True" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="False" />
+                    <Condition Binding="{Binding IsSavingInProcess}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="True"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsResultingImageReady}" Value="False" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="False" />
+                    <Condition Binding="{Binding IsSavingInProcess}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsResultingImageReady}" Value="False" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="True" />
+                    <Condition Binding="{Binding IsSavingInProcess}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsResultingImageReady}" Value="True" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="True" />
+                    <Condition Binding="{Binding IsSavingInProcess}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsResultingImageReady}" Value="True" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="False" />
+                    <Condition Binding="{Binding IsSavingInProcess}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <Style x:Key="loadButton" TargetType="Button" BasedOn="{StaticResource baseButton}">
+        <Style.Triggers>
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsNotLoadingImage}" Value="False" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsNotLoadingImage}" Value="False" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsNotLoadingImage}" Value="True" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="True" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="False"/>
+            </MultiDataTrigger>
+
+            <MultiDataTrigger>
+                <MultiDataTrigger.Conditions>
+                    <Condition Binding="{Binding IsNotLoadingImage}" Value="True" />
+                    <Condition Binding="{Binding IsApplyingFilterInProcess}" Value="False" />
+                </MultiDataTrigger.Conditions>
+                <Setter Property="IsEnabled" Value="True"/>
+            </MultiDataTrigger>
         </Style.Triggers>
     </Style>
 </ResourceDictionary>
