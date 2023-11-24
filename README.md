@@ -13,4 +13,4 @@ User can use one of the prepared image filters or create a new one.
 * [Extended WPF Toolkit](https://github.com/xceedsoftware/wpftoolkit)
 * [DataGrid2DLibrary](http://www.mediafire.com/file/tm1arm230rr1tgi/DataGrid2DTest.zip/file)
 ## References:
-* https://lodev.org/cgtutor/filtering.html
+* [Lode's Computer Graphics Tutorial: Image Filtering](https://lodev.org/cgtutor/filtering.html)
